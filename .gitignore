@@ -1,3 +1,5 @@
 **/.cursor/
 **/.idea/
 **/.code
+**/testdata/
+**/target/

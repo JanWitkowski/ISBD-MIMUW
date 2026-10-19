@@ -1,6 +1,7 @@
 use std::env;
 use std::fs::File;
 use std::os::unix::fs::FileExt;
+use std::time::Instant;
 
 mod hash;
 use hash::sum_block_hash;
@@ -8,10 +9,9 @@ use hash::sum_block_hash;
 const BLOCK_SIZE: u64 = 512;
 
 fn main() {
-
     let args: Vec<String> = env::args().collect();
-    if args.len() != 2 {
-        println!("Usage: cargo run --release --bin latency filepath");
+    if args.len() != 3 {
+        eprintln!("Usage: cargo run --release --bin throughput filepath block_size");
         return;
     }
 
@@ -27,15 +27,17 @@ fn main() {
         eprintln!("Error opening file: {}", args[1]);
         return;
     }
+    let block_size = args[2].parse::<u64>().unwrap_or(BLOCK_SIZE);
     let total_size = metadata.unwrap().len();
-    let num_blocks = (total_size + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    let num_blocks = total_size.div_ceil(block_size);
 
-    let mut buffer = vec![0u8; BLOCK_SIZE as usize];
+    let mut buffer = vec![0u8; block_size as usize];
     let mut result = vec![0u8; 16];
-    for block_idx in 0..num_blocks
-    {
-        let offset = block_idx * BLOCK_SIZE;
-        let bytes_to_read = std::cmp::min(BLOCK_SIZE, total_size - offset) as usize;
+    let start = Instant::now();
+
+    for block_idx in 0..num_blocks {
+        let offset = block_idx * block_size;
+        let bytes_to_read = block_size.min(total_size - offset) as usize;
 
         // read
         let target_buf = &mut buffer[..bytes_to_read];
@@ -49,10 +51,17 @@ fn main() {
         let block_hash = md5::compute(target_buf);
         sum_block_hash(&mut result, &block_hash);
     }
+
+    let elapsed = start.elapsed();
+    println!(
+        "Throughput | {} µs | M={} B",
+        elapsed.as_micros(),
+        block_size
+    );
+
     print!("{} 0x", args[1].clone());
     for byte in &result {
         print!("{:02x}", byte);
     }
-    println!("");
-
+    println!();
 }

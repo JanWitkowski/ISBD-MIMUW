@@ -6,10 +6,10 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 FILE="$SCRIPT_DIR/../testdata/test_2gb.bin"
 BIN="$SCRIPT_DIR/target/release/pipeline"
 
-BLOCK_SIZES=(4096 65536 1048576)
-K_VALUES=(1 5 50 100)
+BLOCK_SIZES=(1048576)
+K_VALUES=(1 5 50 100 200 500 1000)
 THREAD_COUNTS=(1 2 4 8)
-REPEATS=2
+REPEATS=3
 
 cd "$SCRIPT_DIR"
 
